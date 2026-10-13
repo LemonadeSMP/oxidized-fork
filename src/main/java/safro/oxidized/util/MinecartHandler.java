@@ -1,16 +1,15 @@
 package safro.oxidized.util;
 
-import net.minecraft.block.enums.RailShape;
-import net.minecraft.entity.vehicle.AbstractMinecartEntity;
-import net.minecraft.entity.vehicle.MinecartEntity;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.vehicle.AbstractMinecart;
+import net.minecraft.world.level.block.state.properties.RailShape;
 import safro.oxidized.mixin.MinecartEntityAccessor;
 
 public class MinecartHandler {
 
-    public static void handleBlockHit(BlockPos pos, AbstractMinecartEntity minecart, RailShape railShape) {
-        double x = minecart.getVelocity().x;
-        double z = minecart.getVelocity().z;
+    public static void handleBlockHit(BlockPos pos, AbstractMinecart minecart, RailShape railShape) {
+        double x = minecart.getDeltaMovement().x;
+        double z = minecart.getDeltaMovement().z;
         if (railShape == RailShape.EAST_WEST) {
             if (((MinecartEntityAccessor) minecart).invokeWillHitBlockAt(pos.west())) {
                 x = 0.02D;
@@ -25,6 +24,6 @@ public class MinecartHandler {
             }
         }
 
-        minecart.setVelocity(x, minecart.getVelocity().y, z);
+        minecart.setDeltaMovement(x, minecart.getDeltaMovement().y, z);
     }
 }

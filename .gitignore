@@ -1,6 +1,7 @@
 # gradle
 
 .gradle/
+.gradle-user-home/
 build/
 out/
 classes/
@@ -31,3 +32,7 @@ bin/
 # fabric
 
 run/
+
+# generated Minecraft asset cache
+
+/assets/

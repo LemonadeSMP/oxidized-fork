@@ -1,111 +1,95 @@
 package safro.oxidized.block;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.ShapeContext;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemPlacementContext;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.state.StateManager;
-import net.minecraft.state.property.BooleanProperty;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.random.Random;
-import net.minecraft.util.shape.VoxelShape;
-import net.minecraft.world.BlockView;
-import net.minecraft.world.World;
-import net.minecraft.world.event.GameEvent;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraft.world.level.gameevent.GameEvent;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import safro.oxidized.util.TrapDamageSource;
-import safro.saflib.util.DamageSourceUtil;
 
 public class CopperTrapBlock extends Block {
-    public static final BooleanProperty CLOSED;
-    protected static final VoxelShape SHAPE;
+    public static final BooleanProperty CLOSED = BooleanProperty.create("closed");
+    private static final VoxelShape SHAPE = Block.box(2, 0, 1, 14, 2, 15);
 
-    public CopperTrapBlock(Settings settings) {
-        super(settings);
-        this.setDefaultState(this.stateManager.getDefaultState().with(CLOSED, false));
+    public CopperTrapBlock(Properties properties) {
+        super(properties);
+        registerDefaultState(defaultBlockState().setValue(CLOSED, false));
     }
 
     @Override
-    public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, BlockHitResult hit) {
-        if (!world.isClient) {
-            if (state.get(CLOSED)) {
-                world.setBlockState(pos, state.with(CLOSED, false), 3);
-            } else {
-                world.setBlockState(pos, state.with(CLOSED, true), 3);
-            }
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        if (!level.isClientSide) {
+            level.setBlock(pos, state.setValue(CLOSED, !state.getValue(CLOSED)), 3);
         }
-        world.playSound(null, pos, SoundEvents.BLOCK_COPPER_HIT, SoundCategory.BLOCKS, 1.0F, 1.0F);
-        world.emitGameEvent(player, GameEvent.BLOCK_CHANGE, pos);
-        return ActionResult.SUCCESS;
+        level.playSound(player, pos, SoundEvents.COPPER_HIT, SoundSource.BLOCKS, 1.0F, 1.0F);
+        level.gameEvent(player, GameEvent.BLOCK_CHANGE, pos);
+        return InteractionResult.SUCCESS;
     }
 
     @Override
-    public void onEntityCollision(BlockState state, World world, BlockPos pos, Entity entity) {
-        if (entity instanceof LivingEntity && !entity.canAvoidTraps()) {
-            if (!state.get(CLOSED)) {
-                if (!world.isClient && (entity.lastRenderX != entity.getX() || entity.lastRenderZ != entity.getZ())) {
-                    double d = Math.abs(entity.getX() - entity.lastRenderX);
-                    double e = Math.abs(entity.getZ() - entity.lastRenderZ);
-                    if (d >= 0.003000000026077032D || e >= 0.003000000026077032D) {
-                        entity.damage(DamageSourceUtil.create(world, TrapDamageSource.TRAP), 5.0F);
-                    }
-                    this.schedule(state, world, pos);
-                }
+    public void entityInside(BlockState state, Level level, BlockPos pos, Entity entity) {
+        if (entity instanceof LivingEntity living && !living.isIgnoringBlockTriggers() && !state.getValue(CLOSED) && !level.isClientSide) {
+            double movedX = Math.abs(entity.getX() - entity.xo);
+            double movedZ = Math.abs(entity.getZ() - entity.zo);
+            if (movedX >= 0.003000000026077032D || movedZ >= 0.003000000026077032D) {
+                entity.hurt(TrapDamageSource.create(level), 5.0F);
             }
+            schedule(state, level, pos);
         }
     }
 
     @Override
-    protected void appendProperties(StateManager.Builder<Block, BlockState> builder) {
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(CLOSED);
-        super.appendProperties(builder);
     }
 
     @Override
-    public VoxelShape getOutlineShape(BlockState state, BlockView world, BlockPos pos, ShapeContext context) {
+    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         return SHAPE;
     }
 
-    public void schedule(BlockState state, World world, BlockPos pos) {
-        world.setBlockState(pos, state.with(CLOSED, true), 3);
-        world.scheduleBlockTick(pos, this, 60);
-        world.updateNeighborsAlways(pos, this);
+    public void schedule(BlockState state, Level level, BlockPos pos) {
+        level.setBlock(pos, state.setValue(CLOSED, true), 3);
+        level.scheduleTick(pos, this, 60);
+        level.updateNeighborsAt(pos, this);
     }
 
     @Override
-    public void scheduledTick(BlockState state, ServerWorld world, BlockPos pos, Random random) {
-        if (state.get(CLOSED)) {
-            world.setBlockState(pos, state.with(CLOSED, false));
-            world.updateNeighborsAlways(pos, this);
+    public void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
+        if (state.getValue(CLOSED)) {
+            level.setBlock(pos, state.setValue(CLOSED, false), 3);
+            level.updateNeighborsAt(pos, this);
         }
     }
 
     @Override
-    public BlockState getPlacementState(ItemPlacementContext ctx) {
-        return this.getDefaultState().with(CLOSED, ctx.getWorld().isReceivingRedstonePower(ctx.getBlockPos()));
+    public BlockState getStateForPlacement(BlockPlaceContext context) {
+        return defaultBlockState().setValue(CLOSED, context.getLevel().hasNeighborSignal(context.getClickedPos()));
     }
 
     @Override
-    public void neighborUpdate(BlockState state, World world, BlockPos pos, Block block, BlockPos fromPos, boolean notify) {
-        if (!world.isClient) {
-            world.setBlockState(pos, state.with(CLOSED, world.isReceivingRedstonePower(pos)));
+    public void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighbor, BlockPos fromPos, boolean movedByPiston) {
+        if (!level.isClientSide) {
+            level.setBlock(pos, state.setValue(CLOSED, level.hasNeighborSignal(pos)), 3);
         }
     }
 
     public static boolean isClosed(BlockState state) {
-        return state.get(CLOSED);
-    }
-
-    static {
-        CLOSED = BooleanProperty.of("closed");
-        SHAPE = Block.createCuboidShape(2, 0, 1, 14, 2, 15);
+        return state.getValue(CLOSED);
     }
 }

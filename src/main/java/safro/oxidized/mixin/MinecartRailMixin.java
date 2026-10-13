@@ -1,25 +1,22 @@
 package safro.oxidized.mixin;
 
-
-import net.minecraft.block.AbstractRailBlock;
-import net.minecraft.block.BlockState;
-import net.minecraft.entity.vehicle.AbstractMinecartEntity;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.vehicle.AbstractMinecart;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.Block;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import safro.oxidized.block.CopperRailBlock;
 
-@Mixin(AbstractMinecartEntity.class)
+@Mixin(AbstractMinecart.class)
 public abstract class MinecartRailMixin {
-
-    @SuppressWarnings("ConstantConditions")
-    @Inject(at = @At("HEAD"), method = "moveOnRail", cancellable = true)
-    protected void moveOnRail(BlockPos pos, BlockState state, CallbackInfo info) {
-        AbstractRailBlock railBlock = (AbstractRailBlock) state.getBlock();
-        if (railBlock instanceof CopperRailBlock) {
-            ((CopperRailBlock) railBlock).onMoveOnRail(pos, state, (AbstractMinecartEntity) (Object) this, info);
+    @Inject(at = @At("HEAD"), method = "moveAlongTrack", cancellable = true, remap = false)
+    private void oxidized$moveOnRail(BlockPos pos, BlockState state, CallbackInfo ci) {
+        Block block = state.getBlock();
+        if (block instanceof CopperRailBlock railBlock) {
+            railBlock.onMoveOnRail(pos, state, (AbstractMinecart) (Object) this, ci);
         }
     }
 }

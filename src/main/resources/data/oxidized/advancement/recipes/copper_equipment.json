@@ -1,0 +1,51 @@
+{
+    "parent":  "minecraft:recipes/root",
+    "rewards":  {
+                    "recipes":  [
+                                    "oxidized:copper_sword",
+                                    "oxidized:copper_pickaxe",
+                                    "oxidized:copper_axe",
+                                    "oxidized:copper_shovel",
+                                    "oxidized:copper_hoe",
+                                    "oxidized:copper_helmet",
+                                    "oxidized:copper_chestplate",
+                                    "oxidized:copper_leggings",
+                                    "oxidized:copper_boots",
+                                    "oxidized:copper_sword_from_smelting",
+                                    "oxidized:copper_pickaxe_from_smelting",
+                                    "oxidized:copper_axe_from_smelting",
+                                    "oxidized:copper_shovel_from_smelting",
+                                    "oxidized:copper_hoe_from_smelting",
+                                    "oxidized:copper_helmet_from_smelting",
+                                    "oxidized:copper_chestplate_from_smelting",
+                                    "oxidized:copper_leggings_from_smelting",
+                                    "oxidized:copper_boots_from_smelting"
+                                ]
+                },
+    "criteria":  {
+                     "has_copper_ingot":  {
+                                              "trigger":  "minecraft:inventory_changed",
+                                              "conditions":  {
+                                                                 "items":  [
+                                                                               {
+                                                                                   "items":  [
+                                                                                                 "minecraft:copper_ingot"
+                                                                                             ]
+                                                                               }
+                                                                           ]
+                                                             }
+                                          },
+                     "has_one_recipe":  {
+                                            "trigger":  "minecraft:recipe_unlocked",
+                                            "conditions":  {
+                                                               "recipe":  "oxidized:copper_sword"
+                                                           }
+                                        }
+                 },
+    "requirements":  [
+                         [
+                             "has_copper_ingot",
+                             "has_one_recipe"
+                         ]
+                     ]
+}

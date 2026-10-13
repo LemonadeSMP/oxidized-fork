@@ -39,7 +39,7 @@
   "text.oxidized.rose_gold_template.ing_desc": "Поместите медный слиток",
 
   "gui.recipebook.toggleRecipes.kiln": "Показ рецептов для сушильни",
-  "itemGroup.oxidized.item_group": "Окисленное",
+  "itemGroup.oxidized.oxidized": "Окисленное",
   "container.oxidized.copper_kiln": "Медная сушильня",
   "category.oxidized.kiln_smelting": "Плавка в медной сушильне"
 }

@@ -1,42 +1,21 @@
 package safro.oxidized.item;
 
-import net.minecraft.block.Block;
-import net.minecraft.item.Items;
-import net.minecraft.item.ToolMaterial;
-import net.minecraft.recipe.Ingredient;
-import net.minecraft.registry.tag.BlockTags;
-import net.minecraft.registry.tag.TagKey;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.world.item.Tier;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.crafting.Ingredient;
+import net.neoforged.neoforge.common.SimpleTier;
 
-public class RoseGoldMaterial implements ToolMaterial {
-    public static final RoseGoldMaterial ROSE_GOLD = new RoseGoldMaterial();
+/** Rose gold tool values inherited from the upstream mod. */
+public final class RoseGoldMaterial {
+    public static final Tier ROSE_GOLD = new SimpleTier(
+            BlockTags.INCORRECT_FOR_GOLD_TOOL,
+            250,
+            12.0F,
+            0.0F,
+            22,
+            () -> Ingredient.of(Items.COPPER_INGOT)
+    );
 
-    @Override
-    public int getDurability() {
-        return 250;
-    }
-
-    @Override
-    public float getMiningSpeedMultiplier() {
-        return 12.0F;
-    }
-
-    @Override
-    public float getAttackDamage() {
-        return 0.0F;
-    }
-
-    @Override
-    public TagKey<Block> getInverseTag() {
-        return BlockTags.INCORRECT_FOR_GOLD_TOOL;
-    }
-
-    @Override
-    public int getEnchantability() {
-        return 22;
-    }
-
-    @Override
-    public Ingredient getRepairIngredient() {
-        return Ingredient.ofItems(Items.COPPER_INGOT);
-    }
+    private RoseGoldMaterial() {}
 }

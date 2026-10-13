@@ -1,7 +1,7 @@
 package safro.oxidized.mixin;
 
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.phys.Vec3;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -11,14 +11,13 @@ import safro.oxidized.registry.BlockRegistry;
 
 @Mixin(LivingEntity.class)
 public class LivingEntityMixin {
-    @Inject(method = "tick", at = @At("HEAD"))
-    private void trapEntity(CallbackInfo ci) {
+    @Inject(method = "tick", at = @At("HEAD"), remap = false)
+    private void oxidized$trapEntity(CallbackInfo ci) {
         LivingEntity entity = (LivingEntity) (Object) this;
-        if (entity.getBlockStateAtPos().isOf(BlockRegistry.COPPER_TRAP)) {
-            if (CopperTrapBlock.isClosed(entity.getBlockStateAtPos())) {
-                Vec3d v = entity.getPos();
-                entity.teleport(v.getX(), v.getY(), v.getZ(), false);
-            }
+        if (entity.getBlockStateOn().is(BlockRegistry.COPPER_TRAP.get())
+                && CopperTrapBlock.isClosed(entity.getBlockStateOn())) {
+            Vec3 position = entity.position();
+            entity.teleportTo(position.x, position.y, position.z);
         }
     }
 }

@@ -1,16 +1,15 @@
 package safro.oxidized.mixin;
 
-import net.minecraft.entity.vehicle.AbstractMinecartEntity;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.vehicle.AbstractMinecart;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Invoker;
 
-@Mixin(AbstractMinecartEntity.class)
+@Mixin(AbstractMinecart.class)
 public interface MinecartEntityAccessor {
-    @Invoker("willHitBlockAt")
+    @Invoker(value = "isRedstoneConductor", remap = false)
     boolean invokeWillHitBlockAt(BlockPos pos);
 
-    @Invoker("getMaxSpeed")
+    @Invoker(value = "getMaxSpeed", remap = false)
     double invokeGetMaxOffRailSpeed();
-
 }

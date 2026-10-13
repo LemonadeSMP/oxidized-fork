@@ -1,17 +1,17 @@
 package safro.oxidized.mixin;
 
-import net.minecraft.advancement.criterion.Criteria;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.LightningRodBlock;
-import net.minecraft.block.pattern.BlockPattern;
-import net.minecraft.block.pattern.BlockPatternBuilder;
-import net.minecraft.block.pattern.CachedBlockPosition;
-import net.minecraft.predicate.block.BlockStatePredicate;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.advancements.CriteriaTriggers;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LightningRodBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.pattern.BlockInWorld;
+import net.minecraft.world.level.block.state.pattern.BlockPattern;
+import net.minecraft.world.level.block.state.pattern.BlockPatternBuilder;
+import net.minecraft.world.phys.AABB;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -28,52 +28,60 @@ import java.util.Iterator;
 public class LightningRodBlockMixin {
     @Unique
     @Nullable
-    private BlockPattern copperGolemPattern = null;
+    private BlockPattern oxidized$copperGolemPattern;
 
-    @Inject(method = "onBlockAdded", at = @At("TAIL"))
-    private void checkForGolem(BlockState state, World world, BlockPos pos, BlockState oldState, boolean notify, CallbackInfo ci) {
-        if (!oldState.isOf(state.getBlock())) {
-            if (Oxidized.CONFIG.enable_copper_golem) this.trySpawnCopperGolem(world, pos);
+    @Inject(method = "onPlace", at = @At("TAIL"), remap = false)
+    private void oxidized$checkForGolem(BlockState state, Level level, BlockPos pos, BlockState oldState,
+                                        boolean movedByPiston, CallbackInfo ci) {
+        if (!oldState.is(state.getBlock()) && Oxidized.CONFIG.enable_copper_golem) {
+            this.oxidized$trySpawnCopperGolem(level, pos);
         }
     }
 
     @Unique
-    private void trySpawnCopperGolem(World world, BlockPos pos) {
-        BlockPattern.Result result = this.getCopperGolemPattern().searchAround(world, pos);
-        int i;
-        Iterator var6;
-        ServerPlayerEntity serverPlayerEntity;
-        int j;
-        if (result != null) {
-            for (i = 0; i < this.getCopperGolemPattern().getHeight(); ++i) {
-                CachedBlockPosition cachedBlockPosition = result.translate(0, i, 0);
-                world.setBlockState(cachedBlockPosition.getBlockPos(), Blocks.AIR.getDefaultState(), 2);
-                world.syncWorldEvent(2001, cachedBlockPosition.getBlockPos(), Block.getRawIdFromState(cachedBlockPosition.getBlockState()));
-            }
+    private void oxidized$trySpawnCopperGolem(Level level, BlockPos pos) {
+        BlockPattern.BlockPatternMatch result = this.oxidized$getCopperGolemPattern().find(level, pos);
+        if (result == null) {
+            return;
+        }
 
-            CopperGolemEntity golem = EntityRegistry.COPPER_GOLEM.create(world);
-            BlockPos blockPos = result.translate(0, 2, 0).getBlockPos();
-            golem.refreshPositionAndAngles((double) blockPos.getX() + 0.5D, (double) blockPos.getY() + 0.05D, (double) blockPos.getZ() + 0.5D, 0.0F, 0.0F);
-            world.spawnEntity(golem);
-            var6 = world.getNonSpectatingEntities(ServerPlayerEntity.class, golem.getBoundingBox().expand(5.0D)).iterator();
+        for (int i = 0; i < this.oxidized$getCopperGolemPattern().getHeight(); ++i) {
+            BlockInWorld blockInWorld = result.getBlock(0, i, 0);
+            BlockPos blockPos = blockInWorld.getPos();
+            BlockState matchedState = blockInWorld.getState();
+            level.setBlock(blockPos, Blocks.AIR.defaultBlockState(), 2);
+            level.levelEvent(2001, blockPos, Block.getId(matchedState));
+        }
 
-            while (var6.hasNext()) {
-                serverPlayerEntity = (ServerPlayerEntity) var6.next();
-                Criteria.SUMMONED_ENTITY.trigger(serverPlayerEntity, golem);
-            }
+        CopperGolemEntity golem = EntityRegistry.COPPER_GOLEM.get().create(level);
+        BlockPos spawnPos = result.getBlock(0, 2, 0).getPos();
+        golem.moveTo((double) spawnPos.getX() + 0.5D, (double) spawnPos.getY() + 0.05D,
+                (double) spawnPos.getZ() + 0.5D, 0.0F, 0.0F);
+        level.addFreshEntity(golem);
 
-            for (j = 0; j < this.getCopperGolemPattern().getHeight(); ++j) {
-                CachedBlockPosition cachedBlockPosition2 = result.translate(0, j, 0);
-                world.updateNeighbors(cachedBlockPosition2.getBlockPos(), Blocks.AIR);
-            }
+        Iterator<ServerPlayer> players = level.getEntitiesOfClass(ServerPlayer.class,
+                golem.getBoundingBox().inflate(5.0D)).iterator();
+        while (players.hasNext()) {
+            CriteriaTriggers.SUMMONED_ENTITY.trigger(players.next(), golem);
+        }
+
+        for (int i = 0; i < this.oxidized$getCopperGolemPattern().getHeight(); ++i) {
+            BlockPos blockPos = result.getBlock(0, i, 0).getPos();
+            level.updateNeighborsAt(blockPos, Blocks.AIR);
         }
     }
 
     @Unique
-    private BlockPattern getCopperGolemPattern() {
-        if (this.copperGolemPattern == null) {
-            this.copperGolemPattern = BlockPatternBuilder.start().aisle("^", "$", "#").where('^', CachedBlockPosition.matchesBlockState(BlockStatePredicate.forBlock(Blocks.LIGHTNING_ROD))).where('$', CachedBlockPosition.matchesBlockState(BlockStatePredicate.forBlock(Blocks.CARVED_PUMPKIN))).where('#', CachedBlockPosition.matchesBlockState(BlockStatePredicate.forBlock(Blocks.COPPER_BLOCK).or(BlockStatePredicate.forBlock(Blocks.CUT_COPPER)))).build();
+    private BlockPattern oxidized$getCopperGolemPattern() {
+        if (this.oxidized$copperGolemPattern == null) {
+            this.oxidized$copperGolemPattern = BlockPatternBuilder.start()
+                    .aisle("^", "$", "#")
+                    .where('^', BlockInWorld.hasState(blockState -> blockState.is(Blocks.LIGHTNING_ROD)))
+                    .where('$', BlockInWorld.hasState(blockState -> blockState.is(Blocks.CARVED_PUMPKIN)))
+                    .where('#', BlockInWorld.hasState(blockState ->
+                            blockState.is(Blocks.COPPER_BLOCK) || blockState.is(Blocks.CUT_COPPER)))
+                    .build();
         }
-        return this.copperGolemPattern;
+        return this.oxidized$copperGolemPattern;
     }
 }

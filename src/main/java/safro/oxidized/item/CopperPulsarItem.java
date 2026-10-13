@@ -1,79 +1,73 @@
 package safro.oxidized.item;
 
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.NbtComponent;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.ExperienceOrbEntity;
-import net.minecraft.entity.ItemEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.predicate.entity.EntityPredicates;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
-import net.minecraft.util.TypedActionResult;
-import net.minecraft.util.math.Box;
-import net.minecraft.world.World;
-import safro.oxidized.Oxidized;
-
 import java.util.List;
 
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntitySelector;
+import net.minecraft.world.entity.ExperienceOrb;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.level.Level;
+import safro.oxidized.Oxidized;
+
 public class CopperPulsarItem extends Item {
+    private static final String POWERED = "Powered";
 
-    static final String POWERED = "Powered";
-
-    public CopperPulsarItem(Settings settings) {
-        super(settings);
+    public CopperPulsarItem(Properties properties) {
+        super(properties);
     }
 
     @Override
-    public void inventoryTick(ItemStack stack, World world, Entity entity, int slot, boolean selected) {
-        if(!world.isClient() && isActive(stack)) {
-            ServerPlayerEntity player = (ServerPlayerEntity) entity;
-            Box box = player.getBoundingBox().expand(Oxidized.CONFIG.pulsar_reach);
-
-            List<ItemEntity> entityItems = player.getWorld().getEntitiesByClass(ItemEntity.class, box, EntityPredicates.VALID_ENTITY);
-            for (ItemEntity item : entityItems) {
-                item.onPlayerCollision(player);
+    public void inventoryTick(ItemStack stack, Level level, Entity entity, int slot, boolean selected) {
+        if (!level.isClientSide && isActive(stack)) {
+            ServerPlayer player = (ServerPlayer) entity;
+            AABB box = player.getBoundingBox().inflate(Oxidized.CONFIG.pulsar_reach);
+            List<ItemEntity> items = player.serverLevel().getEntitiesOfClass(ItemEntity.class, box, EntitySelector.ENTITY_STILL_ALIVE);
+            for (ItemEntity item : items) {
+                item.playerTouch(player);
             }
-
-            List<ExperienceOrbEntity> entityXP = player.getWorld().getEntitiesByClass(ExperienceOrbEntity.class, box, EntityPredicates.VALID_ENTITY);
-            for (ExperienceOrbEntity xp : entityXP) {
-                xp.onPlayerCollision(player);
+            List<ExperienceOrb> experience = player.serverLevel().getEntitiesOfClass(ExperienceOrb.class, box, EntitySelector.ENTITY_STILL_ALIVE);
+            for (ExperienceOrb orb : experience) {
+                orb.playerTouch(player);
             }
         }
     }
 
     @Override
-    public TypedActionResult<ItemStack> use(World world, PlayerEntity player, Hand hand) {
-        ItemStack pulsar = player.getStackInHand(hand);
-
-        if (!world.isClient() && !player.isSneaking()) {
-            this.toggle(pulsar);
-            String status = this.isActive(pulsar) ? "Active" : "Inactive";
-            player.sendMessage(Text.of("§6Pulsar is now: " + status), false);
+    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+        ItemStack pulsar = player.getItemInHand(hand);
+        if (!level.isClientSide && !player.isShiftKeyDown()) {
+            toggle(pulsar);
+            String status = isActive(pulsar) ? "Active" : "Inactive";
+            player.displayClientMessage(Component.literal("§6Pulsar is now: " + status), false);
         }
-        return TypedActionResult.success(pulsar, world.isClient());
+        return InteractionResultHolder.sidedSuccess(pulsar, level.isClientSide);
     }
 
     public boolean isActive(ItemStack stack) {
-        NbtComponent data = stack.get(DataComponentTypes.CUSTOM_DATA);
+        CustomData data = stack.get(DataComponents.CUSTOM_DATA);
         if (data != null) {
-            NbtCompound tag = data.copyNbt();
-            if (tag.contains("Powered")) {
-                return tag.getBoolean("Powered");
+            CompoundTag tag = data.copyTag();
+            if (tag.contains(POWERED)) {
+                return tag.getBoolean(POWERED);
             }
         }
         return true;
     }
 
     public void toggle(ItemStack stack) {
-        boolean active = isActive(stack);
-        NbtCompound tag = new NbtCompound();
-        tag.putBoolean("Powered", !active);
-        NbtComponent.set(DataComponentTypes.CUSTOM_DATA, stack, tag);
+        CompoundTag tag = new CompoundTag();
+        tag.putBoolean(POWERED, !isActive(stack));
+        stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
     }
 }

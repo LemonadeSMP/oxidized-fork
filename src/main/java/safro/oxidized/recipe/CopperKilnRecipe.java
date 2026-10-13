@@ -1,25 +1,31 @@
 package safro.oxidized.recipe;
 
-import net.minecraft.item.ItemStack;
-import net.minecraft.recipe.AbstractCookingRecipe;
-import net.minecraft.recipe.Ingredient;
-import net.minecraft.recipe.RecipeSerializer;
-import net.minecraft.recipe.book.CookingRecipeCategory;
-import net.minecraft.util.Identifier;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.AbstractCookingRecipe;
+import net.minecraft.world.item.crafting.CookingBookCategory;
+import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.item.crafting.RecipeSerializer;
+import net.minecraft.world.item.crafting.RecipeType;
 import safro.oxidized.registry.BlockRegistry;
+import safro.oxidized.registry.RecipeRegistry;
 
 public class CopperKilnRecipe extends AbstractCookingRecipe {
-
-    public CopperKilnRecipe(String group, CookingRecipeCategory category, Ingredient input, ItemStack output, float experience, int cookTime) {
-        super(BlockRegistry.COPPER_KILN_RECIPE_TYPE, group, category,  input, output, experience, cookTime);
+    public CopperKilnRecipe(String group, CookingBookCategory category, Ingredient input, ItemStack output, float experience, int cookTime) {
+        super(RecipeRegistry.COPPER_KILN_TYPE.get(), group, category, input, output, experience, cookTime);
     }
 
-    public ItemStack createIcon() {
-        return new ItemStack(BlockRegistry.COPPER_KILN);
+    @Override
+    public ItemStack getToastSymbol() {
+        return new ItemStack(BlockRegistry.COPPER_KILN.get());
+    }
+
+    @Override
+    public RecipeType<?> getType() {
+        return RecipeRegistry.COPPER_KILN_TYPE.get();
     }
 
     @Override
     public RecipeSerializer<?> getSerializer() {
-        return BlockRegistry.COPPER_KILN_RECIPE_SERIALIZER;
+        return RecipeRegistry.COPPER_KILN_SERIALIZER.get();
     }
 }

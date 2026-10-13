@@ -1,167 +1,168 @@
 package safro.oxidized.entity;
 
-import net.minecraft.block.Oxidizable;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.EquipmentSlot;
-import net.minecraft.entity.LightningEntity;
-import net.minecraft.entity.ai.goal.LookAroundGoal;
-import net.minecraft.entity.ai.goal.LookAtEntityGoal;
-import net.minecraft.entity.ai.goal.WanderAroundGoal;
-import net.minecraft.entity.attribute.DefaultAttributeContainer;
-import net.minecraft.entity.attribute.EntityAttributes;
-import net.minecraft.entity.damage.DamageSource;
-import net.minecraft.entity.data.DataTracker;
-import net.minecraft.entity.data.TrackedData;
-import net.minecraft.entity.data.TrackedDataHandlerRegistry;
-import net.minecraft.entity.mob.MobEntity;
-import net.minecraft.entity.passive.GolemEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.AxeItem;
-import net.minecraft.item.ItemStack;
-import net.minecraft.particle.ParticleTypes;
-import net.minecraft.particle.ParticleUtil;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvent;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
-import net.minecraft.util.math.intprovider.UniformIntProvider;
-import net.minecraft.world.World;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.ParticleUtils;
+import net.minecraft.util.valueproviders.UniformInt;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LightningBolt;
+import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
+import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
+import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.animal.AbstractGolem;
+import net.minecraft.world.item.AxeItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.WeatheringCopper;
 import safro.oxidized.entity.goal.MoveToLightningRodGoal;
 import safro.oxidized.entity.goal.UseButtonGoal;
 
-public class CopperGolemEntity extends GolemEntity {
-    private static final TrackedData<Boolean> IS_PRESSING_BUTTONS;
-    private Oxidizable.OxidationLevel oxidizationLevel;
+public class CopperGolemEntity extends AbstractGolem {
+    private static final EntityDataAccessor<Boolean> IS_PRESSING_BUTTONS =
+            SynchedEntityData.defineId(CopperGolemEntity.class, EntityDataSerializers.BOOLEAN);
+
+    private WeatheringCopper.WeatherState oxidizationLevel;
     private int tickOxidization = 0;
 
-    public CopperGolemEntity(EntityType<? extends CopperGolemEntity> entityType, World world) {
-        super(entityType, world);
+    public CopperGolemEntity(EntityType<? extends CopperGolemEntity> entityType, Level level) {
+        super(entityType, level);
     }
 
     @Override
-    protected void initGoals() {
-        this.goalSelector.add(1, new MoveToLightningRodGoal(this, 0.6D));
-        this.goalSelector.add(2, new UseButtonGoal(this, 0.8D));
-        this.goalSelector.add(3, new WanderAroundGoal(this, 0.4));
-        this.goalSelector.add(4, new LookAtEntityGoal(this, PlayerEntity.class, 6.0F));
-        this.goalSelector.add(5, new LookAroundGoal(this));
+    protected void registerGoals() {
+        this.goalSelector.addGoal(1, new MoveToLightningRodGoal(this, 0.6D));
+        this.goalSelector.addGoal(2, new UseButtonGoal(this, 0.8D));
+        this.goalSelector.addGoal(3, new WaterAvoidingRandomStrollGoal(this, 0.4D));
+        this.goalSelector.addGoal(4, new LookAtPlayerGoal(this, Player.class, 6.0F));
+        this.goalSelector.addGoal(5, new RandomLookAroundGoal(this));
     }
 
-    public static DefaultAttributeContainer.Builder createCopperGolemAttributes() {
-        return MobEntity.createMobAttributes().add(EntityAttributes.GENERIC_MAX_HEALTH, 15.0D).add(EntityAttributes.GENERIC_MOVEMENT_SPEED, 0.27D).add(EntityAttributes.GENERIC_KNOCKBACK_RESISTANCE, 0.75D);
+    public static AttributeSupplier.Builder createCopperGolemAttributes() {
+        return Mob.createMobAttributes()
+                .add(Attributes.MAX_HEALTH, 15.0D)
+                .add(Attributes.MOVEMENT_SPEED, 0.27D)
+                .add(Attributes.KNOCKBACK_RESISTANCE, 0.75D);
     }
 
     public void setPressingButtons(boolean pressing) {
-        this.dataTracker.set(IS_PRESSING_BUTTONS, pressing);
+        this.entityData.set(IS_PRESSING_BUTTONS, pressing);
     }
 
     public boolean isPressingButtons() {
-        return this.dataTracker.get(IS_PRESSING_BUTTONS);
+        return this.entityData.get(IS_PRESSING_BUTTONS);
     }
 
-    public Oxidizable.OxidationLevel getOxidizationLevel() {
+    public WeatheringCopper.WeatherState getOxidizationLevel() {
         return oxidizationLevel;
     }
 
     public boolean isStatue() {
-        return oxidizationLevel.equals(Oxidizable.OxidationLevel.OXIDIZED);
+        return oxidizationLevel.equals(WeatheringCopper.WeatherState.OXIDIZED);
     }
 
     @Override
     public void tick() {
         super.tick();
         this.oxidizationTick();
-        if (this.oxidizationLevel != Oxidizable.OxidationLevel.OXIDIZED) {
+        if (this.oxidizationLevel != WeatheringCopper.WeatherState.OXIDIZED) {
             ++tickOxidization;
         }
-        this.setAiDisabled(this.isStatue());
+        this.setNoAi(this.isStatue());
     }
 
     protected void oxidizationTick() {
         if (tickOxidization == 1200000) {
-            this.oxidizationLevel = Oxidizable.OxidationLevel.OXIDIZED;
+            this.oxidizationLevel = WeatheringCopper.WeatherState.OXIDIZED;
         } else if (tickOxidization == 800000) {
-            this.oxidizationLevel = Oxidizable.OxidationLevel.WEATHERED;
+            this.oxidizationLevel = WeatheringCopper.WeatherState.WEATHERED;
         } else if (tickOxidization == 400000) {
-            this.oxidizationLevel = Oxidizable.OxidationLevel.EXPOSED;
+            this.oxidizationLevel = WeatheringCopper.WeatherState.EXPOSED;
         } else if (this.tickOxidization < 400000) {
-            this.oxidizationLevel = Oxidizable.OxidationLevel.UNAFFECTED;
+            this.oxidizationLevel = WeatheringCopper.WeatherState.UNAFFECTED;
         }
     }
 
     @Override
-    protected void initDataTracker(DataTracker.Builder builder) {
-        super.initDataTracker(builder);
-        builder.add(IS_PRESSING_BUTTONS, false);
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(IS_PRESSING_BUTTONS, false);
     }
 
     @Override
-    protected ActionResult interactMob(PlayerEntity player, Hand hand) {
-        World world = player.getWorld();
-        ItemStack stack = player.getStackInHand(hand);
-        if (stack.getItem() instanceof AxeItem && this.oxidizationLevel != Oxidizable.OxidationLevel.UNAFFECTED) {
+    protected InteractionResult mobInteract(Player player, InteractionHand hand) {
+        ItemStack stack = player.getItemInHand(hand);
+        if (stack.getItem() instanceof AxeItem && this.oxidizationLevel != WeatheringCopper.WeatherState.UNAFFECTED) {
             this.degradeLevel();
-            world.playSound(player, player.getBlockPos(), SoundEvents.ITEM_AXE_SCRAPE, SoundCategory.BLOCKS, 1.0F, 1.0F);
-            world.syncWorldEvent(player, 3005, player.getBlockPos(), 0);
-            stack.damage(1, player, hand == Hand.MAIN_HAND ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND);
-            return ActionResult.SUCCESS;
+            this.level().playSound(player, player.blockPosition(), SoundEvents.AXE_SCRAPE, SoundSource.BLOCKS, 1.0F, 1.0F);
+            this.level().levelEvent(player, 3005, player.blockPosition(), 0);
+            stack.hurtAndBreak(1, player, hand == InteractionHand.MAIN_HAND ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND);
+            return InteractionResult.SUCCESS;
         }
-        return ActionResult.PASS;
+        return InteractionResult.PASS;
     }
 
     public void degradeLevel() {
-        if (this.oxidizationLevel == Oxidizable.OxidationLevel.OXIDIZED) {
-            this.oxidizationLevel = Oxidizable.OxidationLevel.WEATHERED;
-        } else if (this.oxidizationLevel == Oxidizable.OxidationLevel.WEATHERED) {
-            this.oxidizationLevel = Oxidizable.OxidationLevel.EXPOSED;
-        } else if (this.oxidizationLevel == Oxidizable.OxidationLevel.EXPOSED) {
-            this.oxidizationLevel = Oxidizable.OxidationLevel.UNAFFECTED;
+        if (this.oxidizationLevel == WeatheringCopper.WeatherState.OXIDIZED) {
+            this.oxidizationLevel = WeatheringCopper.WeatherState.WEATHERED;
+        } else if (this.oxidizationLevel == WeatheringCopper.WeatherState.WEATHERED) {
+            this.oxidizationLevel = WeatheringCopper.WeatherState.EXPOSED;
+        } else if (this.oxidizationLevel == WeatheringCopper.WeatherState.EXPOSED) {
+            this.oxidizationLevel = WeatheringCopper.WeatherState.UNAFFECTED;
         }
     }
 
     @Override
-    public void onStruckByLightning(ServerWorld world, LightningEntity lightning) {
-        super.onStruckByLightning(world, lightning);
+    public void thunderHit(ServerLevel level, LightningBolt lightning) {
+        super.thunderHit(level, lightning);
         this.tickOxidization = 0;
-        this.oxidizationLevel = Oxidizable.OxidationLevel.UNAFFECTED;
-        ParticleUtil.spawnParticle(this.getMovementDirection().getAxis(), world, this.getBlockPos(), 0.125D, ParticleTypes.ELECTRIC_SPARK, UniformIntProvider.create(1, 2));
+        this.oxidizationLevel = WeatheringCopper.WeatherState.UNAFFECTED;
+        ParticleUtils.spawnParticlesAlongAxis(this.getMotionDirection().getAxis(), level, this.blockPosition(), 0.125D,
+                ParticleTypes.ELECTRIC_SPARK, UniformInt.of(1, 2));
     }
 
     @Override
-    public boolean damage(DamageSource source, float amount) {
-        boolean bl = super.damage(source, amount);
-        if (source.getAttacker() instanceof LightningEntity) {
+    public boolean hurt(DamageSource source, float amount) {
+        boolean damaged = super.hurt(source, amount);
+        if (source.getEntity() instanceof LightningBolt) {
             return false;
-        } else
-            return bl;
+        }
+        return damaged;
     }
 
     @Override
-    protected void pushAway(Entity entity) {
-        if (entity instanceof PlayerEntity) {
-            super.pushAway(entity);
+    protected void doPush(Entity entity) {
+        if (entity instanceof Player) {
+            super.doPush(entity);
         }
     }
 
     @Override
-    protected int getNextAirUnderwater(int air) {
+    protected int decreaseAirSupply(int air) {
         return air;
     }
 
     @Override
     protected SoundEvent getHurtSound(DamageSource source) {
-        return SoundEvents.ENTITY_IRON_GOLEM_HURT;
+        return SoundEvents.IRON_GOLEM_HURT;
     }
 
     @Override
     protected SoundEvent getDeathSound() {
-        return SoundEvents.ENTITY_IRON_GOLEM_DEATH;
-    }
-
-    static {
-        IS_PRESSING_BUTTONS = DataTracker.registerData(CopperGolemEntity.class, TrackedDataHandlerRegistry.BOOLEAN);
+        return SoundEvents.IRON_GOLEM_DEATH;
     }
 }

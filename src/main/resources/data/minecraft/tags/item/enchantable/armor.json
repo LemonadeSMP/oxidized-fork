@@ -1,0 +1,9 @@
+{
+    "replace":  false,
+    "values":  [
+                   "oxidized:copper_helmet",
+                   "oxidized:copper_chestplate",
+                   "oxidized:copper_leggings",
+                   "oxidized:copper_boots"
+               ]
+}

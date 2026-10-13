@@ -1,71 +1,81 @@
 package safro.oxidized.registry;
 
-import net.fabricmc.fabric.api.registry.OxidizableBlocksRegistry;
-import net.minecraft.block.*;
-import net.minecraft.block.entity.BlockEntityType;
-import net.minecraft.block.piston.PistonBehavior;
-import net.minecraft.recipe.CookingRecipeSerializer;
-import net.minecraft.recipe.RecipeSerializer;
-import net.minecraft.recipe.RecipeType;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.Registry;
-import net.minecraft.resource.featuretoggle.FeatureFlags;
-import net.minecraft.screen.ScreenHandlerType;
-import net.minecraft.sound.BlockSoundGroup;
-import net.minecraft.state.property.Properties;
-import net.minecraft.util.Identifier;
-import safro.oxidized.block.*;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.LanternBlock;
+import net.minecraft.world.level.block.WeatheringCopper;
+import net.minecraft.world.level.block.WeatheringCopperFullBlock;
+import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.material.MapColor;
+import net.minecraft.world.level.material.PushReaction;
+import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.item.crafting.RecipeSerializer;
+import net.minecraft.world.item.crafting.RecipeType;
+import net.neoforged.neoforge.registries.DeferredBlock;
+import net.neoforged.neoforge.registries.DeferredHolder;
+import net.neoforged.neoforge.registries.DeferredRegister;
 import safro.oxidized.block.entity.CopperKilnBlockEntity;
 import safro.oxidized.block.screen.CopperKilnScreenHandler;
 import safro.oxidized.recipe.CopperKilnRecipe;
-import safro.saflib.registry.BaseBlockItemRegistry;
+import safro.oxidized.Oxidized;
+import safro.oxidized.block.CopperButtonBlock;
+import safro.oxidized.block.CopperKilnBlock;
+import safro.oxidized.block.CopperPanBlock;
+import safro.oxidized.block.CopperRailBlock;
+import safro.oxidized.block.CopperTrapBlock;
 
-import java.util.function.ToIntFunction;
+public final class BlockRegistry {
+    public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(Oxidized.MOD_ID);
 
-public class BlockRegistry extends BaseBlockItemRegistry {
-    static { MODID = "oxidized"; }
+    public static final DeferredBlock<Block> COPPER_RAIL = BLOCKS.register("copper_rail", () -> new CopperRailBlock(
+            BlockBehaviour.Properties.of().mapColor(MapColor.NONE).noOcclusion().pushReaction(PushReaction.DESTROY)
+                    .noCollission().strength(0.7F).sound(SoundType.METAL)));
 
-    public static final Block COPPER_RAIL = register("copper_rail", new CopperRailBlock(AbstractBlock.Settings.create().mapColor(MapColor.CLEAR).nonOpaque().pistonBehavior(PistonBehavior.DESTROY).noCollision().strength(0.7F).sounds(BlockSoundGroup.METAL)));
-    public static final Block VERTICAL_CUT_COPPER = register("vertical_cut_copper", new OxidizableBlock(Oxidizable.OxidationLevel.UNAFFECTED, AbstractBlock.Settings.create().mapColor(MapColor.ORANGE).sounds(BlockSoundGroup.COPPER).requiresTool().strength(3.0F, 6.0F)));
-    public static final Block VERTICAL_EXPOSED_CUT_COPPER = register("vertical_exposed_cut_copper", new OxidizableBlock(Oxidizable.OxidationLevel.EXPOSED, AbstractBlock.Settings.copy(BlockRegistry.VERTICAL_CUT_COPPER)));
-    public static final Block VERTICAL_WEATHERED_CUT_COPPER = register("vertical_weathered_cut_copper", new OxidizableBlock(Oxidizable.OxidationLevel.WEATHERED, AbstractBlock.Settings.copy(BlockRegistry.VERTICAL_CUT_COPPER)));
-    public static final Block VERTICAL_OXIDIZED_CUT_COPPER = register("vertical_oxidized_cut_copper", new OxidizableBlock(Oxidizable.OxidationLevel.OXIDIZED, AbstractBlock.Settings.copy(BlockRegistry.VERTICAL_CUT_COPPER)));
-    public static final Block WAXED_VERTICAL_CUT_COPPER = register("waxed_vertical_cut_copper", new Block(AbstractBlock.Settings.copy(BlockRegistry.VERTICAL_CUT_COPPER)));
-    public static final Block WAXED_VERTICAL_EXPOSED_CUT_COPPER = register("waxed_vertical_exposed_cut_copper", new Block(AbstractBlock.Settings.copy(BlockRegistry.VERTICAL_CUT_COPPER)));
-    public static final Block WAXED_VERTICAL_WEATHERED_CUT_COPPER = register("waxed_vertical_weathered_cut_copper", new Block(AbstractBlock.Settings.copy(BlockRegistry.VERTICAL_CUT_COPPER)));
-    public static final Block WAXED_VERTICAL_OXIDIZED_CUT_COPPER = register("waxed_vertical_oxidized_cut_copper", new Block(AbstractBlock.Settings.copy(BlockRegistry.VERTICAL_CUT_COPPER)));
-    public static final LanternBlock COPPER_LANTERN = register("copper_lantern", new LanternBlock(AbstractBlock.Settings.create().mapColor(MapColor.IRON_GRAY).requiresTool().strength(3.5F).sounds(BlockSoundGroup.LANTERN).luminance((state) -> 15).nonOpaque()));
-    public static final Block COPPER_PAN = register("copper_pan", new CopperPanBlock(blockWithStrength(3.0F, 6.0F).ticksRandomly()));
-    public static final Block COPPER_BUTTON = register("copper_button", new CopperButtonBlock(AbstractBlock.Settings.create().mapColor(MapColor.CLEAR).nonOpaque().pistonBehavior(PistonBehavior.DESTROY).noCollision().strength(0.5F).sounds(BlockSoundGroup.COPPER)));
+    public static final DeferredBlock<Block> VERTICAL_CUT_COPPER = weathering("vertical_cut_copper", WeatheringCopper.WeatherState.UNAFFECTED);
+    public static final DeferredBlock<Block> VERTICAL_EXPOSED_CUT_COPPER = weathering("vertical_exposed_cut_copper", WeatheringCopper.WeatherState.EXPOSED);
+    public static final DeferredBlock<Block> VERTICAL_WEATHERED_CUT_COPPER = weathering("vertical_weathered_cut_copper", WeatheringCopper.WeatherState.WEATHERED);
+    public static final DeferredBlock<Block> VERTICAL_OXIDIZED_CUT_COPPER = weathering("vertical_oxidized_cut_copper", WeatheringCopper.WeatherState.OXIDIZED);
 
-    public static final Block COPPER_KILN = register("copper_kiln", new CopperKilnBlock(blockWithStrength(3.5F, 6.0F).luminance(createLightLevelBlockstate(13)).nonOpaque()));
-    public static BlockEntityType<CopperKilnBlockEntity> COPPER_KILN_BLOCK_ENTITY = register("copper_kiln", CopperKilnBlockEntity::new, COPPER_KILN);
-    public static final ScreenHandlerType<CopperKilnScreenHandler> COPPER_KILN_SCREEN_HANDLER = Registry.register(Registries.SCREEN_HANDLER, Identifier.of("oxidized", "copper_kiln_screen_handler"), new ScreenHandlerType<>(CopperKilnScreenHandler::new, FeatureFlags.VANILLA_FEATURES));
-    public static final RecipeType<CopperKilnRecipe> COPPER_KILN_RECIPE_TYPE = Registry.register(Registries.RECIPE_TYPE, Identifier.of("oxidized", "kiln_smelting"), new RecipeType<>() {
-        public String toString() {
-            return "oxidized:kiln_smelting";
-        }
-    });
-    public static final RecipeSerializer<CopperKilnRecipe> COPPER_KILN_RECIPE_SERIALIZER = Registry.register(Registries.RECIPE_SERIALIZER, Identifier.of("oxidized", "kiln_smelting"), new CookingRecipeSerializer<>(CopperKilnRecipe::new, 100));
+    public static final DeferredBlock<Block> WAXED_VERTICAL_CUT_COPPER = waxed("waxed_vertical_cut_copper");
+    public static final DeferredBlock<Block> WAXED_VERTICAL_EXPOSED_CUT_COPPER = waxed("waxed_vertical_exposed_cut_copper");
+    public static final DeferredBlock<Block> WAXED_VERTICAL_WEATHERED_CUT_COPPER = waxed("waxed_vertical_weathered_cut_copper");
+    public static final DeferredBlock<Block> WAXED_VERTICAL_OXIDIZED_CUT_COPPER = waxed("waxed_vertical_oxidized_cut_copper");
 
-    public static final Block COPPER_TRAP = register("copper_trap", new CopperTrapBlock(blockWithStrength(2.0F, 3.0F).noCollision()));
+    public static final DeferredBlock<LanternBlock> COPPER_LANTERN = BLOCKS.register("copper_lantern", () -> new LanternBlock(
+            BlockBehaviour.Properties.of().mapColor(MapColor.METAL).requiresCorrectToolForDrops().strength(3.5F)
+                    .sound(SoundType.LANTERN).lightLevel(state -> 15).noOcclusion()));
+    public static final DeferredBlock<Block> COPPER_PAN = BLOCKS.register("copper_pan", () -> new CopperPanBlock(copperBlockProperties().randomTicks()));
+    public static final DeferredBlock<Block> COPPER_BUTTON = BLOCKS.register("copper_button", () -> new CopperButtonBlock(
+            BlockBehaviour.Properties.of().mapColor(MapColor.NONE).noOcclusion().pushReaction(PushReaction.DESTROY)
+                    .noCollission().strength(0.5F).sound(SoundType.COPPER)));
+    public static final DeferredBlock<CopperKilnBlock> COPPER_KILN = BLOCKS.register("copper_kiln", () -> new CopperKilnBlock(
+            copperBlockProperties().lightLevel(state -> state.getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.LIT) ? 13 : 0)
+                    .noOcclusion()));
+    public static final DeferredBlock<Block> COPPER_TRAP = BLOCKS.register("copper_trap", () -> new CopperTrapBlock(
+            copperBlockProperties().strength(2.0F, 3.0F).noCollission()));
 
-    public static void init() {
-        OxidizableBlocksRegistry.registerOxidizableBlockPair(VERTICAL_CUT_COPPER, VERTICAL_EXPOSED_CUT_COPPER);
-        OxidizableBlocksRegistry.registerOxidizableBlockPair(VERTICAL_EXPOSED_CUT_COPPER, VERTICAL_WEATHERED_CUT_COPPER);
-        OxidizableBlocksRegistry.registerOxidizableBlockPair(VERTICAL_WEATHERED_CUT_COPPER, VERTICAL_OXIDIZED_CUT_COPPER);
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<CopperKilnBlockEntity>> COPPER_KILN_BLOCK_ENTITY = BlockEntityRegistry.COPPER_KILN;
+    public static final DeferredHolder<MenuType<?>, MenuType<CopperKilnScreenHandler>> COPPER_KILN_SCREEN_HANDLER = MenuRegistry.COPPER_KILN;
+    public static final DeferredHolder<RecipeType<?>, RecipeType<CopperKilnRecipe>> COPPER_KILN_RECIPE_TYPE = RecipeRegistry.COPPER_KILN_TYPE;
+    public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<CopperKilnRecipe>> COPPER_KILN_RECIPE_SERIALIZER = RecipeRegistry.COPPER_KILN_SERIALIZER;
 
-        OxidizableBlocksRegistry.registerWaxableBlockPair(VERTICAL_CUT_COPPER, WAXED_VERTICAL_CUT_COPPER);
-        OxidizableBlocksRegistry.registerWaxableBlockPair(VERTICAL_EXPOSED_CUT_COPPER, WAXED_VERTICAL_EXPOSED_CUT_COPPER);
-        OxidizableBlocksRegistry.registerWaxableBlockPair(VERTICAL_WEATHERED_CUT_COPPER, WAXED_VERTICAL_WEATHERED_CUT_COPPER);
-        OxidizableBlocksRegistry.registerWaxableBlockPair(VERTICAL_OXIDIZED_CUT_COPPER, WAXED_VERTICAL_OXIDIZED_CUT_COPPER);
+    private BlockRegistry() {}
+
+    public static void register(net.neoforged.bus.api.IEventBus modBus) {
+        BLOCKS.register(modBus);
     }
 
-    private static AbstractBlock.Settings blockWithStrength(float hardness, float resistance) {
-        return AbstractBlock.Settings.create().mapColor(MapColor.ORANGE).strength(hardness, resistance).requiresTool().sounds(BlockSoundGroup.COPPER);
+    private static DeferredBlock<Block> weathering(String name, WeatheringCopper.WeatherState age) {
+        return BLOCKS.register(name, () -> new WeatheringCopperFullBlock(age, copperBlockProperties()));
     }
 
-    private static ToIntFunction<BlockState> createLightLevelBlockstate(int litLevel) {
-        return (state) -> (Boolean)state.get(Properties.LIT) ? litLevel : 0;
+    private static DeferredBlock<Block> waxed(String name) {
+        return BLOCKS.register(name, () -> new Block(copperBlockProperties()));
+    }
+
+    private static BlockBehaviour.Properties copperBlockProperties() {
+        return BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_ORANGE).sound(SoundType.COPPER)
+                .requiresCorrectToolForDrops().strength(3.0F, 6.0F);
     }
 }

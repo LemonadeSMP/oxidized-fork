@@ -1,13 +1,12 @@
 package safro.oxidized.entity.goal;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.entity.ai.goal.MoveToTargetPosGoal;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.WorldView;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.ai.goal.MoveToBlockGoal;
+import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.block.Blocks;
 import safro.oxidized.entity.CopperGolemEntity;
 
-public class MoveToLightningRodGoal extends MoveToTargetPosGoal {
+public class MoveToLightningRodGoal extends MoveToBlockGoal {
     private final CopperGolemEntity golem;
 
     public MoveToLightningRodGoal(CopperGolemEntity entity, double speed) {
@@ -15,12 +14,13 @@ public class MoveToLightningRodGoal extends MoveToTargetPosGoal {
         this.golem = entity;
     }
 
-    public boolean canStart() {
-        return this.golem.getWorld().isThundering() && super.canStart();
+    @Override
+    public boolean canUse() {
+        return this.golem.level().isThundering() && super.canUse();
     }
 
-    protected boolean isTargetPos(WorldView world, BlockPos pos) {
-        BlockState state = world.getBlockState(pos);
-        return state.isOf(Blocks.LIGHTNING_ROD);
+    @Override
+    protected boolean isValidTarget(LevelReader level, BlockPos pos) {
+        return level.getBlockState(pos).is(Blocks.LIGHTNING_ROD);
     }
 }

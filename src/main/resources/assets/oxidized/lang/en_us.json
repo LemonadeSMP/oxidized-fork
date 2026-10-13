@@ -43,6 +43,16 @@
   "itemGroup.oxidized.oxidized": "Oxidized",
   "container.oxidized.copper_kiln": "Copper Kiln",
   "category.oxidized.kiln_smelting": "Copper Kiln Smelting",
+  "emi.category.oxidized.kiln_smelting": "Copper Kiln Smelting",
 
-  "tag.item.c.copper_nuggets": "Copper Nuggets"
+  "tag.item.c.copper_nuggets": "Copper Nuggets",
+  "item.oxidized.copper_sword": "Copper Sword",
+  "item.oxidized.copper_pickaxe": "Copper Pickaxe",
+  "item.oxidized.copper_axe": "Copper Axe",
+  "item.oxidized.copper_shovel": "Copper Shovel",
+  "item.oxidized.copper_hoe": "Copper Hoe",
+  "item.oxidized.copper_helmet": "Copper Helmet",
+  "item.oxidized.copper_chestplate": "Copper Chestplate",
+  "item.oxidized.copper_leggings": "Copper Leggings",
+  "item.oxidized.copper_boots": "Copper Boots"
 }

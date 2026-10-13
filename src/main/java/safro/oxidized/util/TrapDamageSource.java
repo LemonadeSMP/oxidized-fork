@@ -1,11 +1,19 @@
 package safro.oxidized.util;
 
-import net.minecraft.entity.damage.DamageType;
-import net.minecraft.registry.RegistryKey;
-import safro.saflib.util.DamageSourceUtil;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageType;
+import net.minecraft.world.level.Level;
 
-public class TrapDamageSource {
-    public static final RegistryKey<DamageType> TRAP = DamageSourceUtil.register("oxidized", "trap");
+public final class TrapDamageSource {
+    public static final ResourceKey<DamageType> TRAP = ResourceKey.create(
+            Registries.DAMAGE_TYPE, ResourceLocation.fromNamespaceAndPath("oxidized", "trap"));
 
-    public static void init() {}
+    private TrapDamageSource() {}
+
+    public static DamageSource create(Level level) {
+        return new DamageSource(level.registryAccess().lookupOrThrow(Registries.DAMAGE_TYPE).getOrThrow(TRAP));
+    }
 }

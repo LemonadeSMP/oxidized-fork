@@ -1,49 +1,49 @@
 package safro.oxidized.item;
 
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
-import net.minecraft.util.Hand;
-import net.minecraft.util.TypedActionResult;
-import net.minecraft.world.World;
-import net.minecraft.world.biome.Biome;
-import net.minecraft.world.level.ServerWorldProperties;
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.ServerLevelData;
 import safro.oxidized.mixin.ServerWorldAccessor;
 
 public class BarometerItem extends Item {
-
-    public BarometerItem(Settings settings) {
-        super(settings);
+    public BarometerItem(Properties properties) {
+        super(properties);
     }
 
     @Override
-    public TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {
-        ItemStack stack = user.getStackInHand(hand);
-        if (!world.isClient) {
-            ServerWorld serverWorld = (ServerWorld) world;
-            ServerWorldProperties properties = ((ServerWorldAccessor) serverWorld).getWorldProperties();
-            Biome biome = serverWorld.getBiome(user.getBlockPos()).value();
+    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+        ItemStack stack = player.getItemInHand(hand);
+        if (!level.isClientSide) {
+            ServerLevel serverLevel = (ServerLevel) level;
+            ServerLevelData properties = ((ServerWorldAccessor) serverLevel).getLevelData();
+            BlockPos pos = player.blockPosition();
+            boolean snow = serverLevel.getBiome(pos).value().coldEnoughToSnow(pos);
 
-            if (serverWorld.isThundering()) {
-                user.sendMessage(getTime(properties, false, false), true);
-            } else if (serverWorld.isRaining()) {
-                user.sendMessage(getTime(properties, true, biome.isCold(user.getBlockPos())), true);
+            if (serverLevel.isThundering()) {
+                player.displayClientMessage(getTime(properties, false, false), true);
+            } else if (serverLevel.isRaining()) {
+                player.displayClientMessage(getTime(properties, true, snow), true);
             } else {
-                user.sendMessage(Text.translatable("text.oxidized.clearweather", properties.getClearWeatherTime() / 20).formatted(Formatting.GOLD), true);
+                player.displayClientMessage(Component.translatable("text.oxidized.clearweather", properties.getClearWeatherTime() / 20).withStyle(ChatFormatting.GOLD), true);
             }
         }
-        return TypedActionResult.success(stack, world.isClient());
+        return InteractionResultHolder.sidedSuccess(stack, level.isClientSide);
     }
 
-    private static Text getTime(ServerWorldProperties properties, boolean rain, boolean snow) {
+    private static Component getTime(ServerLevelData properties, boolean rain, boolean snow) {
         int time = (rain ? properties.getRainTime() : properties.getThunderTime()) / 20;
         String key = rain ? "text.oxidized.rain" : "text.oxidized.thunderstorm";
         if (snow) {
             key = "text.oxidized.snow";
         }
-        return Text.translatable(key, time).formatted(Formatting.GOLD);
+        return Component.translatable(key, time).withStyle(ChatFormatting.GOLD);
     }
 }

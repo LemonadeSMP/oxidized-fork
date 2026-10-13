@@ -1,9 +1,10 @@
 {
   "required": true,
-  "minVersion": "0.8",
+  "minVersion": "0.8.5",
   "package": "safro.oxidized.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
+    "ItemStackMigrationMixin",
     "MinecartEntityAccessor",
     "MinecartRailMixin",
     "LightningRodBlockMixin",

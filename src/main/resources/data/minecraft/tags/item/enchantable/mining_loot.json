@@ -1,0 +1,9 @@
+{
+    "replace":  false,
+    "values":  [
+                   "oxidized:copper_pickaxe",
+                   "oxidized:copper_axe",
+                   "oxidized:copper_shovel",
+                   "oxidized:copper_hoe"
+               ]
+}

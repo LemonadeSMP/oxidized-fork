@@ -1,12 +1,11 @@
 package safro.oxidized.block;
 
-import net.minecraft.block.BlockSetType;
-import net.minecraft.block.ButtonBlock;
-import net.minecraft.sound.SoundEvents;
+import net.minecraft.world.level.block.ButtonBlock;
+import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.state.properties.BlockSetType;
 
 public class CopperButtonBlock extends ButtonBlock {
-
-    public CopperButtonBlock(Settings settings) {
-        super(BlockSetType.IRON, 20, settings);
+    public CopperButtonBlock(BlockBehaviour.Properties properties) {
+        super(BlockSetType.IRON, 20, properties);
     }
 }

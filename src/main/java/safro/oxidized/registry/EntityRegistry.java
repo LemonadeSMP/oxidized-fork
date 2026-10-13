@@ -1,23 +1,31 @@
 package safro.oxidized.registry;
 
-import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
-import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder;
-import net.minecraft.entity.EntityDimensions;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.SpawnGroup;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.Registry;
-import net.minecraft.util.Identifier;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.MobCategory;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
+import net.neoforged.neoforge.registries.DeferredHolder;
+import net.neoforged.neoforge.registries.DeferredRegister;
+import safro.oxidized.Oxidized;
 import safro.oxidized.entity.CopperGolemEntity;
 
-public class EntityRegistry {
-    public static final EntityType<CopperGolemEntity> COPPER_GOLEM = EntityType.Builder.create(CopperGolemEntity::new, SpawnGroup.MISC)
-            .dimensions(0.5F, 0.9F).makeFireImmune().maxTrackingRange(10).build();
+public final class EntityRegistry {
+    public static final DeferredRegister<EntityType<?>> ENTITY_TYPES = DeferredRegister.create(net.minecraft.core.registries.Registries.ENTITY_TYPE, Oxidized.MOD_ID);
+    public static final DeferredHolder<EntityType<?>, EntityType<CopperGolemEntity>> COPPER_GOLEM = ENTITY_TYPES.register(
+            "copper_golem", () -> EntityType.Builder.of(CopperGolemEntity::new, MobCategory.MISC)
+                    .sized(0.5F, 0.9F)
+                    .fireImmune()
+                    .clientTrackingRange(10)
+                    .build("copper_golem"));
 
-    public static void init() {
-        Registry.register(Registries.ENTITY_TYPE, Identifier.of("oxidized", "copper_golem"), COPPER_GOLEM);
+    private EntityRegistry() {}
 
-        // Attributes
-        FabricDefaultAttributeRegistry.register(COPPER_GOLEM, CopperGolemEntity.createCopperGolemAttributes());
+    public static void register(IEventBus modEventBus) {
+        ENTITY_TYPES.register(modEventBus);
+        modEventBus.addListener(EntityRegistry::registerAttributes);
+    }
+
+    private static void registerAttributes(EntityAttributeCreationEvent event) {
+        event.put(COPPER_GOLEM.get(), CopperGolemEntity.createCopperGolemAttributes().build());
     }
 }
