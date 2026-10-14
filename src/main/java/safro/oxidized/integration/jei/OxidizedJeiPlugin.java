@@ -20,7 +20,7 @@ import safro.oxidized.registry.RecipeRegistry;
 public class OxidizedJeiPlugin implements IModPlugin {
     private static final ResourceLocation PLUGIN_ID = ResourceLocation.fromNamespaceAndPath("oxidized", "jei_plugin");
     static final RecipeType<RecipeHolder<CopperKilnRecipe>> KILN_SMELTING =
-            RecipeType.createFromVanilla(RecipeRegistry.COPPER_KILN_TYPE.get());
+            RecipeType.createRecipeHolderType(ResourceLocation.fromNamespaceAndPath("oxidized", "kiln_smelting"));
 
     @Override
     public ResourceLocation getPluginUid() {

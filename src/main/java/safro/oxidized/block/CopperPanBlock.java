@@ -55,9 +55,9 @@ public class CopperPanBlock extends Block implements SimpleWaterloggedBlock {
                 if (Oxidized.CONFIG.enable_copper_pan_sound) {
                     level.playSound(null, pos, SoundEvents.FISHING_BOBBER_SPLASH, SoundSource.BLOCKS, 0.4F, 0.9F + random.nextFloat() * 0.2F);
                 }
-                double range = 0.55D;
-                double x = random.nextFloat() * range + (1.0D - range) / 2.0D;
-                double z = random.nextFloat() * range + (1.0D - range) / 2.0D;
+                float range = 0.55F;
+                double x = (double) (level.random.nextFloat() * range) + (1.0F - range) / 2.0F;
+                double z = (double) (level.random.nextFloat() * range) + (1.0F - range) / 2.0F;
                 ItemEntity item = new ItemEntity(level, pos.getX() + x, pos.getY() + 0.66000000238418579D, pos.getZ() + z, new ItemStack(getPannedItem(random)));
                 item.setDefaultPickUpDelay();
                 level.addFreshEntity(item);

@@ -36,7 +36,7 @@ public class CopperGolemEntity extends AbstractGolem {
     private static final EntityDataAccessor<Boolean> IS_PRESSING_BUTTONS =
             SynchedEntityData.defineId(CopperGolemEntity.class, EntityDataSerializers.BOOLEAN);
 
-    private WeatheringCopper.WeatherState oxidizationLevel;
+    private WeatheringCopper.WeatherState oxidizationLevel = WeatheringCopper.WeatherState.UNAFFECTED;
     private int tickOxidization = 0;
 
     public CopperGolemEntity(EntityType<? extends CopperGolemEntity> entityType, Level level) {
@@ -72,7 +72,7 @@ public class CopperGolemEntity extends AbstractGolem {
     }
 
     public boolean isStatue() {
-        return oxidizationLevel.equals(WeatheringCopper.WeatherState.OXIDIZED);
+        return oxidizationLevel == WeatheringCopper.WeatherState.OXIDIZED;
     }
 
     @Override

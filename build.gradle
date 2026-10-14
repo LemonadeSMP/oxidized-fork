@@ -115,9 +115,11 @@ tasks.withType(JavaCompile).configureEach {
 	options.release = 21
 }
 
+def licenseArchiveName = "LICENSE_${project.archives_base_name}"
+
 jar {
 	from('LICENSE') {
-		rename { "${it}_${project.archives_base_name}" }
+		rename('LICENSE', licenseArchiveName)
 	}
 }
 

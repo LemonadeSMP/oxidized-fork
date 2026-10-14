@@ -1,0 +1,13 @@
+{
+  "values": {
+    "oxidized:vertical_cut_copper": {
+      "next_oxidation_stage": "oxidized:vertical_exposed_cut_copper"
+    },
+    "oxidized:vertical_exposed_cut_copper": {
+      "next_oxidation_stage": "oxidized:vertical_weathered_cut_copper"
+    },
+    "oxidized:vertical_weathered_cut_copper": {
+      "next_oxidation_stage": "oxidized:vertical_oxidized_cut_copper"
+    }
+  }
+}

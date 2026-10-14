@@ -36,7 +36,7 @@ public class CopperTrapBlock extends Block {
         if (!level.isClientSide) {
             level.setBlock(pos, state.setValue(CLOSED, !state.getValue(CLOSED)), 3);
         }
-        level.playSound(player, pos, SoundEvents.COPPER_HIT, SoundSource.BLOCKS, 1.0F, 1.0F);
+        level.playSound(null, pos, SoundEvents.COPPER_HIT, SoundSource.BLOCKS, 1.0F, 1.0F);
         level.gameEvent(player, GameEvent.BLOCK_CHANGE, pos);
         return InteractionResult.SUCCESS;
     }
@@ -46,10 +46,12 @@ public class CopperTrapBlock extends Block {
         if (entity instanceof LivingEntity living && !living.isIgnoringBlockTriggers() && !state.getValue(CLOSED) && !level.isClientSide) {
             double movedX = Math.abs(entity.getX() - entity.xo);
             double movedZ = Math.abs(entity.getZ() - entity.zo);
-            if (movedX >= 0.003000000026077032D || movedZ >= 0.003000000026077032D) {
-                entity.hurt(TrapDamageSource.create(level), 5.0F);
+            if (movedX != 0.0D || movedZ != 0.0D) {
+                if (movedX >= 0.003000000026077032D || movedZ >= 0.003000000026077032D) {
+                    entity.hurt(TrapDamageSource.create(level), 5.0F);
+                }
+                schedule(state, level, pos);
             }
-            schedule(state, level, pos);
         }
     }
 
